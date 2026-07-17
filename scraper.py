@@ -1455,6 +1455,8 @@ class ContactScraper:
         "--disable-dev-shm-usage",
         "--no-sandbox",
         "--disable-gpu",
+        "--single-process",
+        "--no-zygote",
     ],
 )
         self._context = await self._browser.new_context(
