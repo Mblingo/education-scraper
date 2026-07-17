@@ -1449,7 +1449,14 @@ class ContactScraper:
     async def __aenter__(self) -> "ContactScraper":
         """Launch the browser and open a shared context on entering the block."""
         self._playwright = await async_playwright().start()
-        self._browser = await self._playwright.chromium.launch(headless=self.headless)
+        self._browser = await self._playwright.chromium.launch(
+    headless=self.headless,
+    args=[
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-gpu",
+    ],
+)
         self._context = await self._browser.new_context(
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
