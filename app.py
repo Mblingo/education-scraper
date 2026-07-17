@@ -458,6 +458,9 @@ def _run_collection_thread(
     try:
         asyncio.run(_collect_contacts(scrape_run, states, job_titles, max_contacts))
     except Exception as exc:
+        import traceback
+        print(f"[scraper thread crashed] {exc!r}")
+        traceback.print_exc()
         scrape_run.set_error(exc)
 
 

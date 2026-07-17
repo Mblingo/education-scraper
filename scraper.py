@@ -1505,18 +1505,58 @@ class ContactScraper:
                 "(e.g. `async with ContactScraper() as scraper:`) before calling fetch_page."
             )
 
-        page = await self._context.new_page()
+        for attempt in range(2):
+            try:
+                page = await self._context.new_page()
+            except Exception as exc:
+                print(f"[fetch_page] browser/context dead, relaunching: {exc!r}")
+                await self._relaunch()
+                continue
+
+            try:
+                await page.goto(url, timeout=self.timeout_ms, wait_until="domcontentloaded")
+                html = await page.content()
+                return html
+            except Exception as exc:
+                print(f"[fetch_page] failed to load {url}: {exc!r}")
+                return ""
+            finally:
+                try:
+                    await page.close()
+                except Exception:
+                    pass
+
+        return ""
+
+    async def _relaunch(self) -> None:
+        """Tear down and recreate the browser + context after a crash."""
         try:
-            await page.goto(url, timeout=self.timeout_ms, wait_until="domcontentloaded")
-            html = await page.content()
-            return html
+            if self._context is not None:
+                await self._context.close()
         except Exception:
-            # Covers Playwright timeouts, navigation errors, and any other
-            # failure to load the page — treated as "no content available"
-            # rather than crashing the whole scraping run.
-            return ""
-        finally:
-            await page.close()
+            pass
+        try:
+            if self._browser is not None:
+                await self._browser.close()
+        except Exception:
+            pass
+
+        self._browser = await self._playwright.chromium.launch(
+            headless=self.headless,
+            args=[
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-gpu",
+                "--single-process",
+                "--no-zygote",
+            ],
+        )
+        self._context = await self._browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            )
+        )
 
     async def extract_contacts(
         self,
