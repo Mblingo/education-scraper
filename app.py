@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import asyncio
 import difflib
+import subprocess
+import sys
 import os
 import tempfile
 import threading
@@ -20,6 +22,10 @@ import streamlit as st
 from exporter import EXPORT_COLUMNS, export_to_excel
 from scraper import ContactScraper, matched_requested_job_title
 from districts import get_districts_for_state
+
+# One-time Playwright browser install for Streamlit Cloud
+if not os.path.exists("/home/appuser/.cache/ms-playwright"):
+    subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
 from search import build_search_query_plan, search_web, DEFAULT_RESULTS_PER_QUERY
 from utils import dedupe_key
 
